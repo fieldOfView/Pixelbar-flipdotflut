@@ -23,20 +23,32 @@ void setup() {
   // Serial2 is for communicating with the flipdot controller
   Serial2.begin(74880);
 
+  for (unsigned int row = 0; row < ROWS; row++)
+  {
+    for (unsigned int column = 0; column < COLUMNS; column++)
+    {
+      // force all pixels to be flipped to "off" on the next display loop
+      current_state[column][row] = HIGH;
+      flip[column][row] = HIGH;
+    }
+  }
+
   // setup and connect to WiFi
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
 
   Serial.println("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
   Serial.println("");
 
   // setup UDP listener
-  if (udp.listen(port)) {
+  if (udp.listen(port))
+  {
     Serial.print("UDP Listening on: ");
     Serial.print(WiFi.localIP());
     Serial.print(":");
@@ -61,7 +73,8 @@ void onUDPMessage(AsyncUDPPacket packet) {
   unsigned int column, row;
   bool new_state;
 
-  if(packet.length() != 2) {
+  if(packet.length() != 2)
+  {
     Serial.println("Received package with invalid length");
     return;
   }
@@ -69,7 +82,8 @@ void onUDPMessage(AsyncUDPPacket packet) {
   cmdh = packet.data()[0];
   cmdl = packet.data()[1];
 
-  if(cmdh & 0x80 == 0 || cmdl & 0x80 != 0) {
+  if(cmdh & 0x80 == 0 || cmdl & 0x80 != 0)
+  {
     Serial.println("Received package with invalid structure");
     return;
   }
@@ -79,7 +93,8 @@ void onUDPMessage(AsyncUDPPacket packet) {
   row = (cmdl & 0x0F);
   new_state = (cmdl & 0x10) != 0;
 
-  if(column >= COLUMNS || row >= ROWS) {
+  if(column >= COLUMNS || row >= ROWS)
+  {
     Serial.println("Received package exceeding allowed positions");
     return;
   }
