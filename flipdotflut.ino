@@ -59,11 +59,11 @@ void onUDPMessage(AsyncUDPPacket packet) {
 
   uint8_t cmdl, cmdh;
   unsigned int column, row;
-  bool state;
+  bool new_state;
 
-  if(packet.lenght() != 2) {
+  if(packet.length() != 2) {
     Serial.println("Received package with invalid length");
-    return
+    return;
   }
 
   cmdh = packet.data()[0];
@@ -71,13 +71,13 @@ void onUDPMessage(AsyncUDPPacket packet) {
 
   if(cmdh & 0x80 == 0 || cmdl & 0x80 != 0) {
     Serial.println("Received package with invalid structure");
-    return
+    return;
   }
 
   // parse column, row, state from message
   column = (cmdh & 0x7F);
   row = (cmdl & 0x0F);
-  state = (cmdl & 0x10) != 0;
+  new_state = (cmdl & 0x10) != 0;
 
   if(column >= COLUMNS || row >= ROWS) {
     Serial.println("Received package exceeding allowed positions");
@@ -130,7 +130,7 @@ void drawDot(unsigned int column, unsigned int row, bool pol) {
   uint8_t cmdl, cmdh;
 
   cmdl = (pol ? (1 << 4) : 0) | (row & 0x0F);
-  cmdh = (1 << 7) | (col & 0x7F);
+  cmdh = (1 << 7) | (column & 0x7F);
 
   Serial2.write(cmdh);
   Serial2.write(cmdl);

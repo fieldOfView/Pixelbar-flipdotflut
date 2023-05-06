@@ -22,4 +22,4 @@ x = reserved for future use, ignored for now
 
 Flipping a dot on the flipdot display is a slow, expensive process compared to receiving UDP packets, so the server can receive multiple updates on a dot before it gets round to sending it to the display. Internally the server caches the state of each dot, and only sends changed dots to the flipdot controller. Sending dots to the display happens asynchronously to receiving UDP packets. This way only the last received state for a dot is used when the display loop gets round to see if the dot needs to be flipped.
 
-This is currently very much a work in progress. I have not even tried to compile it.
+This is currently very much a work in progress. I have only confirmed that it compiles.
