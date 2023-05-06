@@ -11,9 +11,9 @@ const unsigned int port = 1234;
 
 AsyncUDP udp;
 
-std::mutex lock[COLUMNS][ROWS];
-bool flip[COLUMNS][ROWS];
-bool current_state[COLUMNS][ROWS];
+bool current_state[COLUMNS][ROWS]; // last polarity sent to controller for each dot
+bool flip[COLUMNS][ROWS];          // flag to flip polarity for each dot
+std::mutex lock[COLUMNS][ROWS];    // lock to access flip and current_state on one core at a time
 
 void setup() {
   // Serial is for debug output over the USB serial connection
@@ -28,8 +28,8 @@ void setup() {
     for (unsigned int column = 0; column < COLUMNS; column++)
     {
       // force all pixels to be flipped to "off" on the next display loop
-      current_state[column][row] = HIGH;
-      flip[column][row] = HIGH;
+      current_state[column][row] = true;
+      flip[column][row] = true;
     }
   }
 
@@ -119,6 +119,7 @@ void loop() {
       {
         bool new_state = !current_state[column][row];
         current_state[column][row] = new_state;
+        flip[column][row] = false;
 
         // release the lock because we don't need the UDP messages to wait
         // until we are done sending the flipped dot
