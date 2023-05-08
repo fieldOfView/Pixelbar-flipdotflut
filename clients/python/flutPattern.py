@@ -15,6 +15,7 @@ import random
 WIDTH = 112
 HEIGHT = 16
 
+
 def drawDot(sock, destination, column, row, polarity):
     cmdl = polarity << 4 | (row & 0x0F)
     cmdh = (1 << 7) | (column & 0x7F)
@@ -22,28 +23,29 @@ def drawDot(sock, destination, column, row, polarity):
     sock.sendto(bytes([cmdh, cmdl]), destination)
 
 
-def sendPattern(pattern, destination, debug=False):
+def sendPattern(args):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-        if pattern == "fill":
+        if args.pattern == "fill":
             polarity = 1
-        elif pattern == "clear":
+        elif args.pattern == "clear":
             polarity = 0
 
         for row in range(HEIGHT):
-            if pattern == "rows":
+            if args.pattern == "rows":
                 polarity = row % 2
             for column in range(WIDTH):
-                if pattern == "columns":
+                if args.pattern == "columns":
                     polarity = column % 2
-                elif pattern == "random":
+                elif args.pattern == "random":
                     polarity = random.getrandbits(1)
 
-                drawDot(sock, destination, column, row, polarity)
+                drawDot(sock, (args.ip, args.port), column, row, polarity)
 
-                if debug:
+                if args.debug:
                     print(chr(0x2588) if polarity else " ", end="")
-            if debug:
+            if args.debug:
                 print("")
+
 
 if __name__ == "__main__":
     import argparse
@@ -59,5 +61,4 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action='store_true')
 
     args = parser.parse_args()
-
-    sendPattern(args.pattern, (args.ip, args.port), args.debug)
+    sendPattern(args)
