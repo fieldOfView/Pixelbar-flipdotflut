@@ -1,5 +1,6 @@
 #include "WiFi.h"
 #include "AsyncUDP.h"
+#include <ESPmDNS.h>
 #include <mutex>
 
 #define COLUMNS 112
@@ -55,6 +56,16 @@ void setup() {
     Serial.println(port);
     udp.onPacket(onUDPMessage);
   }
+
+  // setup mDNS responder
+  if (!MDNS.begin("flipdotflut")) {
+      Serial.println("Error setting up MDNS responder!");
+      while(1) {
+          delay(1000);
+      }
+  }
+  MDNS.addService("flipdotflut", "udp", port);
+  Serial.println("mDNS responder started");
 }
 
 void onUDPMessage(AsyncUDPPacket packet) {
