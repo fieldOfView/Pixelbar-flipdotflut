@@ -48,14 +48,18 @@ void setup() {
   Serial.println("");
 
   // setup UDP listener
-  if (udp.listen(port))
+  if (!udp.listen(port))
   {
-    Serial.print("UDP Listening on: ");
-    Serial.print(WiFi.localIP());
-    Serial.print(":");
-    Serial.println(port);
-    udp.onPacket(onUDPMessage);
+      Serial.println("Error setting up UDP listener!");
+      while(1) {
+          delay(1000);
+      }
   }
+  Serial.print("UDP Listening on: ");
+  Serial.print(WiFi.localIP());
+  Serial.print(":");
+  Serial.println(port);
+  udp.onPacket(onUDPMessage);
 
   // setup mDNS responder
   if (!MDNS.begin("flipdotflut")) {
