@@ -1,7 +1,6 @@
 #include "WiFi.h"
 #include "AsyncUDP.h"
 #include <ESPmDNS.h>
-#include <mutex>
 
 #define COLUMNS 112
 #define ROWS 16
@@ -12,9 +11,9 @@ const unsigned int port = 1234;
 
 AsyncUDP udp;
 
-bool current_state[COLUMNS][ROWS]; // last polarity sent to controller for each dot
-bool flip[COLUMNS][ROWS];          // flag to flip polarity for each dot
-std::mutex lock[COLUMNS][ROWS];    // lock to access flip and current_state on one core at a time
+bool current_state[COLUMNS][ROWS];     // last polarity sent to controller for each dot
+bool flip[COLUMNS][ROWS];              // flag to flip polarity for each dot
+SemaphoreHandle_t lock[COLUMNS][ROWS]; // lock to access flip and current_state on one core at a time
 
 void setup() {
   // Serial is for debug output over the USB serial connection
@@ -31,6 +30,7 @@ void setup() {
       // force all pixels to be flipped to "off" on the next display loop
       current_state[column][row] = true;
       flip[column][row] = true;
+      lock[column][row] = xSemaphoreCreateMutex();
     }
   }
 
@@ -97,7 +97,8 @@ void onUDPMessage(AsyncUDPPacket packet) {
   cmdh = packet.data()[0];
   cmdl = packet.data()[1];
 
-  if(cmdh & 0x80 == 0 || cmdl & 0x80 != 0)
+
+  if((cmdh & 0x80) == 0 || (cmdl & 0x80) != 0)
   {
     Serial.println("Received package with invalid structure");
     return;
@@ -116,9 +117,11 @@ void onUDPMessage(AsyncUDPPacket packet) {
 
   // acquire a lock on this pixel so it is not accessed by display loop
   // until we are done changing it
-  std::lock_guard<std::mutex> lck(lock[column][row]);
-
-  flip[column][row] = (new_state != current_state[column][row]);
+  if (xSemaphoreTake(lock[column][row], portMAX_DELAY))
+  {
+    flip[column][row] = (new_state != current_state[column][row]);
+    xSemaphoreGive(lock[column][row]);
+  }
 }
 
 void loop() {
@@ -128,20 +131,26 @@ void loop() {
     {
       // acquire a lock on this pixel so it is not accessed by UDP messages
       // until we are done looking at it
-      std::unique_lock<std::mutex> lck(lock[column][row]);
-
-      if (flip[column][row])
+      if (!xSemaphoreTake(lock[column][row], portMAX_DELAY))
       {
-        bool new_state = !current_state[column][row];
-        current_state[column][row] = new_state;
-        flip[column][row] = false;
-
-        // release the lock because we don't need the UDP messages to wait
-        // until we are done sending the flipped dot
-        lck.unlock();
-
-        drawDot(column, row, new_state);
+        continue;
       }
+
+      if (!flip[column][row])
+      {
+        xSemaphoreGive(lock[column][row]);
+        continue;
+      }
+
+      bool new_state = !current_state[column][row];
+      current_state[column][row] = new_state;
+      flip[column][row] = false;
+
+      // release the lock because we don't need the UDP messages to wait
+      // until we are done sending the flipped dot
+      xSemaphoreGive(lock[column][row]);
+
+      drawDot(column, row, new_state);
     }
   }
 }
