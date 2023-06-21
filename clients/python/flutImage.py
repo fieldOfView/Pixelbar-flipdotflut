@@ -13,6 +13,7 @@ from PIL import Image
 import PIL.ImageOps
 import socket
 import math
+import time
 
 WIDTH = 112
 HEIGHT = 16
@@ -26,6 +27,7 @@ def drawDot(sock, destination, column, row, polarity):
 
 
 def sendImage(args):
+    ip = socket.gethostbyname(args.host)
     with Image.open(args.image) as image, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         resampling = Image.Resampling.BICUBIC
         dither = Image.Dither.FLOYDSTEINBERG
@@ -60,20 +62,21 @@ def sendImage(args):
         for row in range(HEIGHT):
             for column in range(WIDTH):
                 polarity = 1 if image.getpixel((column, row)) else 0
-                drawDot(sock, (args.ip, args.port), column, row, polarity)
+                drawDot(sock, (ip, args.port), column, row, polarity)
 
                 if args.debug:
                     print(chr(0x2588) if polarity else " ", end="")
             if args.debug:
                 print("")
+            time.sleep(0.001)
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ip", default="127.0.0.1")
-    parser.add_argument("--port", default=1234)
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=1337)
     parser.add_argument(
         "--scale",
         choices=["stretch", "fill", "fit", "crop"],
