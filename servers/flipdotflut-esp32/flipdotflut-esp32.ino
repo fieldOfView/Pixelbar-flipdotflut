@@ -55,9 +55,9 @@ void setup() {
           delay(1000);
       }
   }
-  Serial.print("UDP Listening on: ");
+  Serial.print("Listening on ");
   Serial.print(WiFi.localIP());
-  Serial.print(":");
+  Serial.print(" UDP port ");
   Serial.println(port);
   udp.onPacket(onUDPMessage);
 
@@ -70,6 +70,7 @@ void setup() {
   }
   MDNS.addService("flipdotflut", "udp", port);
   Serial.println("mDNS responder started");
+  Serial.println("Waiting for flipdotflut messages");
 }
 
 void onUDPMessage(AsyncUDPPacket packet) {
@@ -113,6 +114,11 @@ void onUDPMessage(AsyncUDPPacket packet) {
   {
     Serial.println("Received package exceeding allowed positions");
     return;
+  }
+
+  if(column == (COLUMNS -1) && row == (ROWS-1))
+  {
+    Serial.println("Last pixel received");
   }
 
   // acquire a lock on this pixel so it is not accessed by display loop
