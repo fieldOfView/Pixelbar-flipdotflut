@@ -59,16 +59,18 @@ def sendImage(args):
         if args.invert:
             image = PIL.ImageOps.invert(image)
 
-        for row in range(HEIGHT):
-            for column in range(WIDTH):
-                polarity = 1 if image.getpixel((column, row)) else 0
-                drawDot(sock, (ip, args.port), column, row, polarity)
+        for iterate in range(0, args.iterations):
+            for row in range(HEIGHT):
+                for column in range(WIDTH):
+                    polarity = 1 if image.getpixel((column, row)) else 0
+                    drawDot(sock, (ip, args.port), column, row, polarity)
 
+                    if args.debug:
+                        print(chr(0x2588) if polarity else " ", end="")
                 if args.debug:
-                    print(chr(0x2588) if polarity else " ", end="")
-            if args.debug:
-                print("")
-            time.sleep(0.001)
+                    print("")
+                if not args.nodelay:
+                    time.sleep(0.001)
 
 
 if __name__ == "__main__":
@@ -84,6 +86,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("image")
     parser.add_argument("--invert", action="store_true")
+    parser.add_argument("--iterations", type=int, default=1)
+    parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()

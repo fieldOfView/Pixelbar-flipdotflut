@@ -32,22 +32,24 @@ def sendPattern(args):
         elif args.pattern == "clear":
             polarity = 0
 
-        for row in range(HEIGHT):
-            if args.pattern == "rows":
-                polarity = row % 2
-            for column in range(WIDTH):
-                if args.pattern == "columns":
-                    polarity = column % 2
-                elif args.pattern == "random":
-                    polarity = random.getrandbits(1)
+        for iterate in range(0, args.iterations):
+            for row in range(HEIGHT):
+                if args.pattern == "rows":
+                    polarity = row % 2
+                for column in range(WIDTH):
+                    if args.pattern == "columns":
+                        polarity = column % 2
+                    elif args.pattern == "random":
+                        polarity = random.getrandbits(1)
 
-                drawDot(sock, (ip, args.port), column, row, polarity)
+                    drawDot(sock, (ip, args.port), column, row, polarity)
 
+                    if args.debug:
+                        print(chr(0x2588) if polarity else " ", end="")
                 if args.debug:
-                    print(chr(0x2588) if polarity else " ", end="")
-            if args.debug:
-                print("")
-            time.sleep(0.001)
+                    print("")
+                if not args.nodelay:
+                    time.sleep(0.001)
 
 
 if __name__ == "__main__":
@@ -61,6 +63,8 @@ if __name__ == "__main__":
         choices=["fill", "clear", "rows", "columns", "random"],
         default="fill",
     )
+    parser.add_argument("--iterations", type=int, default=1)
+    parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action='store_true')
 
     args = parser.parse_args()
