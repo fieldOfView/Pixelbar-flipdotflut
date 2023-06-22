@@ -53,7 +53,7 @@ def sendPattern(args):
                 if not args.nodelay:
                     time.sleep(0.001)
             if args.debug and args.iterations > 1 and iterate < args.iterations - 1:
-                print("\033[F" * (HEIGHT+1))
+                print("\033[F" * (HEIGHT + 1))
 
 
 if __name__ == "__main__":
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("--nodelay", action="store_true")
-    parser.add_argument("--debug", action='store_true')
+    parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
     sendPattern(args)

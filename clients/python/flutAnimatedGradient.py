@@ -28,7 +28,7 @@ def drawDot(sock, destination, column, row, polarity):
     sock.sendto(bytes([cmdh, cmdl]), destination)
 
 
-def sendImage(args):
+def sendAnimation(args):
     ip = socket.gethostbyname(args.host)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         radial = Image.radial_gradient("L")
@@ -37,10 +37,10 @@ def sendImage(args):
 
         image = Image.new("L", (WIDTH, HEIGHT))
         while True:
-            x = math.floor((WIDTH-256)/2 * (1+math.sin(time.time())))
-            y = math.floor((HEIGHT-256)/2 * (1+math.cos(time.time()/2.3245)))
+            x = math.floor((WIDTH - 256) / 2 * (1 + math.sin(time.time())))
+            y = math.floor((HEIGHT - 256) / 2 * (1 + math.cos(time.time() / 2.3245)))
 
-            box = (x, y, x+256, y+256)
+            box = (x, y, x + 256, y + 256)
             image.paste(radial, box)
 
             image = image.convert("1")
@@ -57,7 +57,8 @@ def sendImage(args):
             if not args.nodelay:
                 time.sleep(0.01)
             if args.debug:
-                print("\033[F" * (HEIGHT+1))
+                print("\033[F" * (HEIGHT + 1))
+
 
 if __name__ == "__main__":
     import argparse
@@ -71,4 +72,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sendImage(args)
+    sendAnimation(args)

@@ -30,9 +30,10 @@ def drawDot(sock, destination, column, row, polarity):
 
 def sendImage(args):
     ip = socket.gethostbyname(args.host)
-    with Image.open(args.image) as image, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+    with Image.open(args.image) as image, socket.socket(
+        socket.AF_INET, socket.SOCK_DGRAM
+    ) as sock:
         resampling = Image.Resampling.BICUBIC
-        dither = Image.Dither.FLOYDSTEINBERG
 
         if args.scale == "stretch":
             image = image.resize((WIDTH, HEIGHT), resampling)
@@ -40,16 +41,12 @@ def sendImage(args):
             if args.scale in ["fill", "fit"]:
                 image_ratio = image.width / image.height
                 screen_ratio = WIDTH / HEIGHT
-                if args.scale == "fill":
-                    if image_ratio > screen_ratio:
-                        size = (math.floor(HEIGHT * image_ratio), HEIGHT)
-                    else:
-                        size = (WIDTH, math.floor(WIDTH / image_ratio))
+                if (args.scale == "fill" and image_ratio > screen_ratio) or (
+                    args.scale == "fit" and image_ratio < screen_ratio
+                ):
+                    size = (math.floor(HEIGHT * image_ratio), HEIGHT)
                 else:
-                    if image_ratio > screen_ratio:
-                        size = (WIDTH, math.floor(WIDTH / image_ratio))
-                    else:
-                        size = (math.floor(HEIGHT * image_ratio), HEIGHT)
+                    size = (WIDTH, math.floor(WIDTH / image_ratio))
                 image = image.resize(size, resampling)
 
             left = (image.width - WIDTH) / 2
@@ -75,7 +72,7 @@ def sendImage(args):
                     time.sleep(0.001)
 
             if args.debug and args.iterations > 1 and iterate < args.iterations - 1:
-                print("\033[F" * (HEIGHT+1))
+                print("\033[F" * (HEIGHT + 1))
 
 
 if __name__ == "__main__":
