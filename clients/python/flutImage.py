@@ -34,6 +34,7 @@ def sendImage(args):
         socket.AF_INET, socket.SOCK_DGRAM
     ) as sock:
         resampling = Image.Resampling.BICUBIC
+        dither = Image.Dither.NONE if args.nodither else Image.Dither.FLOYDSTEINBERG
 
         if args.scale == "stretch":
             image = image.resize((WIDTH, HEIGHT), resampling)
@@ -54,7 +55,8 @@ def sendImage(args):
 
             image = image.crop((left, top, left + WIDTH, top + HEIGHT))
 
-        image = image.convert("1")
+        image = image.convert("1", dither=dither)
+
         if args.invert:
             image = PIL.ImageOps.invert(image)
 
@@ -88,6 +90,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("image")
     parser.add_argument("--invert", action="store_true")
+    parser.add_argument("--nodither", action="store_true")
     parser.add_argument("--iterations", type=int, default=1)
     parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
