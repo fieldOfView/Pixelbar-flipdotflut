@@ -40,14 +40,14 @@ def sendImage(args):
                 screen_ratio = WIDTH / HEIGHT
                 if args.scale == "fill":
                     if image_ratio > screen_ratio:
-                        size = (math.floor(WIDTH * screen_ratio), HEIGHT)
+                        size = (math.floor(image.height * screen_ratio), HEIGHT)
                     else:
-                        size = (WIDTH, math.floor(HEIGHT * screen_ratio))
+                        size = (WIDTH, math.floor(image.width / screen_ratio))
                 else:
                     if image_ratio > screen_ratio:
-                        size = (WIDTH, math.floor(HEIGHT / screen_ratio))
+                        size = (WIDTH, math.floor(WIDTH / image_ratio))
                     else:
-                        size = (math.floor(WIDTH / screen_ratio), HEIGHT)
+                        size = (math.floor(HEIGHT * image_ratio), HEIGHT)
                 image = image.resize(size, resampling)
 
             left = (image.width - WIDTH) / 2
