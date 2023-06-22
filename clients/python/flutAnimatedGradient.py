@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from PIL import Image
+import PIL.ImageOps
 import socket
 import math
 import time
@@ -31,10 +32,13 @@ def sendImage(args):
     ip = socket.gethostbyname(args.host)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         radial = Image.radial_gradient("L")
+        if not args.invert:
+            radial = PIL.ImageOps.invert(radial)
+
         image = Image.new("L", (WIDTH, HEIGHT))
         while True:
-            x = math.floor(128 * math.sin(time.time()*2.3245))
-            y = math.floor(128 * math.sin(time.time()/2.345))
+            x = math.floor((WIDTH-256)/2 * (1+math.sin(time.time())))
+            y = math.floor((HEIGHT-256)/2 * (1+math.cos(time.time()/2.3245)))
 
             box = (x, y, x+256, y+256)
             image.paste(radial, box)
@@ -61,6 +65,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=1337)
+    parser.add_argument("--invert", action="store_true")
     parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
