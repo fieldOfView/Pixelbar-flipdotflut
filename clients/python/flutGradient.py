@@ -1,13 +1,4 @@
-"""
-   * UDP packet format: Two consecutive bytes containing x,y coordinates and dot polarity (on/off.)
-   * CMDH = 1CCC CCCC
-   * CMDL = 0xxP RRRR
-   *
-   * C = column address
-   * R = row address
-   * P = dot polarity (1= on/ 0=off)
-   * x = reserved for future use, set to 0 for now
-"""
+#!/usr/bin/python3
 
 from PIL import Image
 import socket
@@ -19,6 +10,17 @@ HEIGHT = 16
 
 
 def drawDot(sock, destination, column, row, polarity):
+    """
+    UDP packet format: Two consecutive bytes containing x,y coordinates and dot polarity (on/off.)
+    CMDH = 1CCC CCCC
+    CMDL = 0xxP RRRR
+
+    C = column address
+    R = row address
+    P = dot polarity (1= on/ 0=off)
+    x = reserved for future use, set to 0 for now
+    """
+
     cmdl = polarity << 4 | (row & 0x0F)
     cmdh = (1 << 7) | (column & 0x7F)
 
@@ -33,6 +35,7 @@ def sendImage(args):
         while True:
             x = math.floor(128 * math.sin(time.time()*2.3245))
             y = math.floor(128 * math.sin(time.time()/2.345))
+
             box = (x, y, x+256, y+256)
             image.paste(radial, box)
 
@@ -47,7 +50,10 @@ def sendImage(args):
                         print(chr(0x2588) if polarity else " ", end="")
                 if args.debug:
                     print("")
-            time.sleep(0.01)
+            if not args.nodelay:
+                time.sleep(0.01)
+            if args.debug:
+                print("\033[F" * (HEIGHT+1))
 
 if __name__ == "__main__":
     import argparse
@@ -55,6 +61,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=1337)
+    parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()

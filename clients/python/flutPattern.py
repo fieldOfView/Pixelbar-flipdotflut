@@ -1,13 +1,4 @@
-"""
-   * UDP packet format: Two consecutive bytes containing x,y coordinates and dot polarity (on/off.)
-   * CMDH = 1CCC CCCC
-   * CMDL = 0xxP RRRR
-   *
-   * C = column address
-   * R = row address
-   * P = dot polarity (1= on/ 0=off)
-   * x = reserved for future use, set to 0 for now
-"""
+#!/usr/bin/python3
 
 import socket
 import random
@@ -18,6 +9,17 @@ HEIGHT = 16
 
 
 def drawDot(sock, destination, column, row, polarity):
+    """
+    UDP packet format: Two consecutive bytes containing x,y coordinates and dot polarity (on/off.)
+    CMDH = 1CCC CCCC
+    CMDL = 0xxP RRRR
+
+    C = column address
+    R = row address
+    P = dot polarity (1= on/ 0=off)
+    x = reserved for future use, set to 0 for now
+    """
+
     cmdl = polarity << 4 | (row & 0x0F)
     cmdh = (1 << 7) | (column & 0x7F)
 
@@ -50,6 +52,8 @@ def sendPattern(args):
                     print("")
                 if not args.nodelay:
                     time.sleep(0.001)
+            if args.debug and args.iterations > 1 and iterate < args.iterations - 1:
+                print("\033[F" * (HEIGHT+1))
 
 
 if __name__ == "__main__":
