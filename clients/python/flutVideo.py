@@ -65,7 +65,8 @@ def sendVideo(args):
                 left = math.floor((frame_width - WIDTH) / 2)
                 top = math.floor((frame_height - HEIGHT) / 2)
                 frame = frame[top:(top + HEIGHT), left:(left + WIDTH)]
-                # TODO: make sure frame is still at least WIDTH * HEIGHT
+                # NB: frame could now be smaller than WIDTH, HEIGHT!
+                # see extension below (after conversion to 1 bit)
 
             # covert to greyscale
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -74,6 +75,14 @@ def sendVideo(args):
 
             if args.invert:
                 frame = cv2.bitwise_not(frame)
+
+            frame_height, frame_width = frame.shape[:2]
+            if frame_width < WIDTH or frame_height < HEIGHT:
+                left = math.floor((WIDTH - frame_width)/2)
+                right = WIDTH - frame_width - left
+                top = math.floor((HEIGHT - frame_height)/2)
+                bottom = HEIGHT - frame_height - top
+                frame = cv2.copyMakeBorder(frame, top, bottom, left, right, cv2.BORDER_CONSTANT, 0)
 
             for row in range(HEIGHT):
                 for column in range(WIDTH):
