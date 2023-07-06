@@ -93,8 +93,6 @@ def sendVideo(args):
                         print(chr(0x2588) if polarity else " ", end="")
                 if args.debug:
                     print("")
-                if not args.nodelay:
-                    time.sleep(0.001)
 
             if args.debug:
                 print("\033[F" * (HEIGHT + 1))
@@ -120,7 +118,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("video")
     parser.add_argument("--invert", action="store_true")
-    parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
