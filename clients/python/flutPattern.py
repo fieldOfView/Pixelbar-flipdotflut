@@ -34,7 +34,7 @@ def sendPattern(args):
         elif args.pattern == "clear":
             polarity = 0
 
-        for iterate in range(0, args.iterations):
+        for iteration in range(0, args.repeat):
             for row in range(HEIGHT):
                 if args.pattern == "rows":
                     polarity = row % 2
@@ -52,7 +52,7 @@ def sendPattern(args):
                     print("")
                 if not args.nodelay:
                     time.sleep(0.001)
-            if args.debug and args.iterations > 1 and iterate < args.iterations - 1:
+            if args.debug and args.repeat > 1 and iteration < args.repeat - 1:
                 print("\033[F" * (HEIGHT + 1))
 
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         choices=["fill", "clear", "rows", "columns", "random"],
         default="fill",
     )
-    parser.add_argument("--iterations", type=int, default=1)
+    parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
 

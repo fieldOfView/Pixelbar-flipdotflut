@@ -60,7 +60,7 @@ def sendImage(args):
         if args.invert:
             image = PIL.ImageOps.invert(image)
 
-        for iterate in range(0, args.iterations):
+        for iteration in range(0, args.repeat):
             for row in range(HEIGHT):
                 for column in range(WIDTH):
                     polarity = 1 if image.getpixel((column, row)) else 0
@@ -73,7 +73,7 @@ def sendImage(args):
                 if not args.nodelay:
                     time.sleep(0.001)
 
-            if args.debug and args.iterations > 1 and iterate < args.iterations - 1:
+            if args.debug and args.repeat > 1 and iteration < args.repeat - 1:
                 print("\033[F" * (HEIGHT + 1))
 
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("image")
     parser.add_argument("--invert", action="store_true")
     parser.add_argument("--nodither", action="store_true")
-    parser.add_argument("--iterations", type=int, default=1)
+    parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--nodelay", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
