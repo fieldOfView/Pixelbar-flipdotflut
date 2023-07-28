@@ -1,3 +1,6 @@
+#include <bitset>
+#include <array>
+
 #include "WiFi.h"
 #include "AsyncUDP.h"
 #include <ESPmDNS.h>
@@ -5,15 +8,17 @@
 #define COLUMNS 112
 #define ROWS 16
 
-const char* ssid = "WIFI_NAME";
-const char* pass = "WIFI_PASSWORD";
-const unsigned int port = 1234;
+#define MAX_PACKAGE_LENGTH 1440
+
+const char* ssid = "fieldOfView";
+const char* pass = "tarantino";
+const unsigned int port = 1337;
 
 AsyncUDP udp;
 
-bool current_state[COLUMNS][ROWS];     // last polarity sent to controller for each dot
-bool flip[COLUMNS][ROWS];              // flag to flip polarity for each dot
-SemaphoreHandle_t lock[COLUMNS][ROWS]; // lock to access flip and current_state on one core at a time
+std::bitset<COLUMNS * ROWS> current_state;            // last polarity sent to controller for each dot
+std::bitset<COLUMNS * ROWS> flip;                     // flag to flip polarity for each dot
+std::array<SemaphoreHandle_t, COLUMNS * ROWS> lock;   // lock to access flip and current_state on one core at a time
 
 void setup() {
   // Serial is for debug output over the USB serial connection
@@ -23,14 +28,16 @@ void setup() {
   // Serial2 is for communicating with the flipdot controller
   Serial2.begin(74880);
 
+  unsigned int dot_index;
   for (unsigned int row = 0; row < ROWS; row++)
   {
     for (unsigned int column = 0; column < COLUMNS; column++)
     {
       // force all pixels to be flipped to "off" on the next display loop
-      current_state[column][row] = true;
-      flip[column][row] = true;
-      lock[column][row] = xSemaphoreCreateMutex();
+      dot_index = column + COLUMNS * row;
+      current_state[dot_index] = true;
+      flip[dot_index] = true;
+      lock[dot_index] = xSemaphoreCreateMutex();
     }
   }
 
@@ -87,74 +94,76 @@ void onUDPMessage(AsyncUDPPacket packet) {
 
   uint8_t cmdl, cmdh;
   unsigned int column, row;
+  unsigned int dot_index;
   bool new_state;
 
-  if(packet.length() != 2)
+  int packet_length = packet.length();
+  if(packet_length % 2 != 0 || packet_length > MAX_PACKAGE_LENGTH)
   {
     Serial.println("Received package with invalid length");
     return;
   }
 
-  cmdh = packet.data()[0];
-  cmdl = packet.data()[1];
-
-
-  if((cmdh & 0x80) == 0 || (cmdl & 0x80) != 0)
+  for(int offset=0; offset<packet_length; offset += 2)
   {
-    Serial.println("Received package with invalid structure");
-    return;
-  }
+    cmdh = packet.data()[offset];
+    cmdl = packet.data()[offset + 1];
 
-  // parse column, row, state from message
-  column = (cmdh & 0x7F);
-  row = (cmdl & 0x0F);
-  new_state = (cmdl & 0x10) != 0;
+    if((cmdh & 0x80) == 0 || (cmdl & 0x80) != 0)
+    {
+      Serial.println("Received package with invalid structure");
+      return;
+    }
 
-  if(column >= COLUMNS || row >= ROWS)
-  {
-    Serial.println("Received package exceeding allowed positions");
-    return;
-  }
+    // parse column, row, state from message
+    column = (cmdh & 0x7F);
+    row = (cmdl & 0x0F);
+    new_state = (cmdl & 0x10) != 0;
 
-  if(column == (COLUMNS -1) && row == (ROWS-1))
-  {
-    Serial.println("Last pixel received");
-  }
+    if(column >= COLUMNS || row >= ROWS)
+    {
+      Serial.println("Received package exceeding allowed positions");
+      return;
+    }
 
-  // acquire a lock on this pixel so it is not accessed by display loop
-  // until we are done changing it
-  if (xSemaphoreTake(lock[column][row], portMAX_DELAY))
-  {
-    flip[column][row] = (new_state != current_state[column][row]);
-    xSemaphoreGive(lock[column][row]);
+    unsigned int dot_index = column + COLUMNS * row;
+
+    // acquire a lock on this pixel so it is not accessed by display loop
+    // until we are done changing it
+    if (xSemaphoreTake(lock[dot_index], portMAX_DELAY))
+    {
+      flip[dot_index] = (new_state != current_state[dot_index]);
+      xSemaphoreGive(lock[dot_index]);
+    }
   }
 }
 
 void loop() {
+  unsigned int dot_index;
   for (unsigned int row = 0; row < ROWS; row++)
   {
     for (unsigned int column = 0; column < COLUMNS; column++)
     {
       // acquire a lock on this pixel so it is not accessed by UDP messages
       // until we are done looking at it
-      if (!xSemaphoreTake(lock[column][row], portMAX_DELAY))
+      if (!xSemaphoreTake(lock[dot_index], portMAX_DELAY))
       {
         continue;
       }
 
-      if (!flip[column][row])
+      if (!flip[dot_index])
       {
-        xSemaphoreGive(lock[column][row]);
+        xSemaphoreGive(lock[dot_index]);
         continue;
       }
 
-      bool new_state = !current_state[column][row];
-      current_state[column][row] = new_state;
-      flip[column][row] = false;
+      bool new_state = !current_state[dot_index];
+      current_state[dot_index] = new_state;
+      flip[dot_index] = false;
 
       // release the lock because we don't need the UDP messages to wait
       // until we are done sending the flipped dot
-      xSemaphoreGive(lock[column][row]);
+      xSemaphoreGive(lock[dot_index]);
 
       drawDot(column, row, new_state);
     }
